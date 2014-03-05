@@ -25,7 +25,7 @@ end
 function destroyNode(node)
     cancelTimersOnNode(node)
     cancelTweensOnNode(node)
-    target:removeFromParent() --also sets parent's reference to this node to nil
+    node:removeFromParent() --also sets parent's reference to this node to nil
 end
 
 -- Quick has no "director:pauseAllNodeTimers()" or equivalent for tweens - 
