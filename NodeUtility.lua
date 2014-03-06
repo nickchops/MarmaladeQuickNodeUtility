@@ -57,3 +57,63 @@ function destroyNodesInTree(node, destroyRoot)
         destroyNode(node)
     end
 end
+
+
+----------------------------------------------------------------
+
+-- Translating between parent and child coordspace positions
+
+-- These were originally part of github.com/nickchops/MarmaladeQuickVirtualResolution
+-- but they dont rely on the VirtualResolution mechanism at all so moved here.
+-- They just recursively calculate world and local coords by following parent
+-- references. If using VirtualResolution is a scalerRootNode then that will be included like
+-- any other node. It's recommended to use these inside touch events instead of
+-- virtualResolution:scaleTouchEvents - minimises work and avoids hacking
+-- with the Quick engine.
+
+-- get world coords of a node's x & y pos
+function getWorldCoords(n)
+    local worldX = n.x
+    local worldY = n.y
+    n = n.parent
+    while n do
+        worldX = worldX * n.xScale + n.x
+        worldY = worldY * n.yScale + n.y
+        n = n.parent
+    end
+    return worldX, worldY
+end
+
+function getWorldCoordX(n)
+    local worldX = n.x
+    n = n.parent
+    while n do
+        worldX = worldX * n.xScale + n.x
+        n = n.parent
+    end
+    return worldX
+end
+
+function getWorldCoordY(n)
+    local worldY = n.y
+    n = n.parent
+    while n do
+        worldY = worldY * n.yScale + n.y
+        n = n.parent
+    end
+    return worldY
+end
+
+-- localNode is the node whos x & y marks the origins of a local coord space
+-- Use this to get position relative to the node of a world coord
+function getLocalCoords(worldX, worldY, localNode)
+    local localX = worldX
+    local localY = worldY
+    local n = localNode.parent
+    while n do
+        localX = (localX - n.x) / n.xScale
+        localY = (localY - n.y) / n.yScale
+        n = n.parent
+    end
+    return localX, localY
+end
