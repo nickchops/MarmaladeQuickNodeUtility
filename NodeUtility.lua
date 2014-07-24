@@ -3,14 +3,24 @@
 -- (C) Nick Smith 2014
 
 
-function cancelTimersOnNode(node)
+function cancelTimersOnNode(node, recursive)
     for k,v in pairs(node.timers) do
         v:cancel()
     end
+    if recursive then
+        for k,child in pairs(node.children) do
+            cancelTimersOnNode(child)
+        end
+    end
 end
-function cancelTweensOnNode(node)
+function cancelTweensOnNode(node, recursive)
     for k,v in pairs(node.tweens) do
         tween:cancel(v)
+    end
+    if recursive then
+        for k,child in pairs(node.children) do
+            cancelTweensOnNode(child)
+        end
     end
 end
 
@@ -26,6 +36,8 @@ function destroyNode(node)
     cancelTimersOnNode(node)
     cancelTweensOnNode(node)
     node:removeFromParent() --also sets parent's reference to this node to nil
+    return nil -- calling myNode = destroyNode(myNode) sets ref to nil
+               -- to match behaviour of node:removeFromParent()
 end
 
 -- Quick has no "director:pauseAllNodeTimers()" or equivalent for tweens - 
@@ -55,6 +67,8 @@ function destroyNodesInTree(node, destroyRoot)
     end
     if destroyRoot then
         destroyNode(node)
+        return nil --allow user to call myNode = destroyNodesInTree(myNode, yes)
+                   --to also nil original reference
     end
 end
 
@@ -116,4 +130,23 @@ function getLocalCoords(worldX, worldY, localNode)
         n = n.parent
     end
     return localX, localY
+end
+
+
+function FlickerFx(event)
+    event.target:pauseTweens()
+    event.target.flicker = true --for trailfx
+    event.target.storeAlpha=event.target.alpha
+    event.target.storeStroke=event.target.strokeAlpha
+    event.target.alpha=event.target.flickerAlpha or 0
+    event.target.strokeAlpha=event.target.flickerStrokeAlpha or 0
+    event.target:addTimer(UnFlickerFx, 0.1, 1)
+end
+
+function UnFlickerFx(event)
+    event.target.alpha=event.target.storeAlpha
+    event.target.strokeAlpha=event.target.storeStroke
+    event.target:resumeTweens()
+    event.target.flicker = false
+    event.target:addTimer(FlickerFx, math.random(event.target.flickerMin,event.target.flickerMax)/10, 1)
 end
