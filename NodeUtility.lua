@@ -59,17 +59,37 @@ function resumeNodesInTree(node)
 end
 
 -- Recursively kill tree of nodes. Top level node is optional
--- Will not nil any values pointing to the nodes, but useful for clenaing up
+-- Will not nil any values pointing to the nodes, but useful for cleaning up
 -- dynamically created nodes that only get tracked via the scene graph.
 function destroyNodesInTree(node, destroyRoot)
-    for k,child in pairs(node.children) do
-        destroyNodesInTree(child, true)
+    
+    --NB: Docs say to not insert or remove while looping node.children,
+    --but rules are there to break...!
+    --Each eventual call to destroyNode() calls removeFromParent(), which finds
+    --node in parent's .children array and uses table.remove.
+    --For our loop, we can't use pairs() as order is not guaranteed. Can't use
+    --ipairs as behaviour is undefined after table.remove during ipairs loop.
+    --So, we use a manual loop and know that the .remove call will collapse
+    --the tree meaning we don't need to increment the index.
+    local i = 1
+    while node.children[i] do
+        --workaround to support VirtualResolution: don't delete the scalar node
+        local destroyThisRoot = (node.children[i] ~= node.scalerRootNode)
+        
+        destroyNodesInTree(node.children[i], destroyThisRoot)
+        if not destroyThisRoot then
+            i = i + 1 --but we do increment if we didn't delete the node
+        end
     end
+    
     if destroyRoot then
         destroyNode(node)
         return nil --allow user to call myNode = destroyNodesInTree(myNode, yes)
                    --to also nil original reference
     end
+    
+    --we could probably make this more efficient by traversing the other
+    --way and calling removeChild instead of destroyNode -> removeFromParent...
 end
 
 
