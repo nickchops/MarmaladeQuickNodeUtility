@@ -35,6 +35,7 @@ end
 function destroyNode(node)
     cancelTimersOnNode(node)
     cancelTweensOnNode(node)
+    if node.physics then physics:removeNode(node) end
     node:removeFromParent() --also sets parent's reference to this node to nil
     return nil -- calling myNode = destroyNode(myNode) sets ref to nil
                -- to match behaviour of node:removeFromParent()
@@ -169,4 +170,104 @@ function UnFlickerFx(event)
     event.target:resumeTweens()
     event.target.flicker = false
     event.target:addTimer(FlickerFx, math.random(event.target.flickerMin,event.target.flickerMax)/10, 1)
+end
+
+--------------------------------------------------------------------
+-- scaling
+
+-- TODO: Should attach these to teh Node type so can just do myNode:setDefaultSize() etc
+
+-- Sprites are the size of the file image by default and xScale/yScale is realtive to that
+-- You cant just set w and h on a sprite, its always the file size.
+-- This allows you to set an absolute default size in pixels.
+-- Then you can use setRelativeScale to set x/y scales relative to the size you set here.
+function setDefaultSize(node, w, h, keepRatio, scaleNow)
+    if keepRatio == nil then keepRatio = true end --only used if only one of w or h is specified
+    if scaleNow == nil then scaleNow = true end  --apply scaling now. On by default
+    node.defaultScaleX = 1
+    node.defaultScaleY = 1
+    node.defaultW = w
+    node.defaultH = h
+    if w then
+        node.defaultScaleX = w/node.w
+    end
+    if h then
+        node.defaultScaleY = h/node.h
+    end
+    if keepRatio then
+        if node.defaultScaleY and not w then
+            node.defaultScaleX = node.defaultScaleY
+        end
+        if node.defaultScaleX and not h then
+            node.defaultScaleY = node.defaultScaleX
+        end
+    end
+    if scaleNow then
+        node.xScale = node.defaultScaleX
+        node.yScale = node.defaultScaleY
+    end
+end
+
+-- like above, but only one-off. setRelativeSize will ignore anything we set here
+function setSize(node, w, h, keepRatio)
+    if keepRatio == nil then keepRatio = true end --only used if only one of w or h is specified
+    local wScale
+    local hScale
+    if w then
+        wScale = w/node.w
+        node.xScale = wScale
+    end
+    if h then
+        hScale = h/node.h
+        node.yScale = hScale
+    end
+    if keepRatio then
+        if hScale and not wScale then
+            node.xScale = hScale
+        end
+        if wScale and not hScale then
+            node.yScale = wScale
+        end
+    end
+end
+
+function getScaledX(node, x)
+    if node.defaultScaleX then
+        return x*node.defaultScaleX
+    else
+        return x
+    end
+end
+
+function getScaledY(node, y)
+    if node.defaultScaleY then
+        return y*node.defaultScaleY
+    else
+        return y
+    end
+end
+
+function setRelativeScale(node, xScale, yScale)
+    if xScale then
+        if node.defaultScaleX then
+            node.xScale = xScale*node.defaultScaleX
+        else
+            node.xScale = xScale
+        end
+    end
+    if yScale then
+        if node.defaultScaleY then
+            node.yScale = yScale*node.defaultScaleY
+        else
+            node.yScale = yScale
+        end
+    end
+end
+
+function getWidth(node)
+    return node.w*node.xScale
+end
+
+function getHeight(node)
+    return node.h*node.yScale
 end
