@@ -181,6 +181,7 @@ end
 --------------------------------------------------------------------
 -- scaling
 
+-- TODO: In SDK itself, we should attach these to the Node type so can just do myNode:setDefaultSize() etc
 
 -- Sprites are the size of the file image by default and xScale/yScale is realtive to that
 -- You cant just set w and h on a sprite, its always the file size.
